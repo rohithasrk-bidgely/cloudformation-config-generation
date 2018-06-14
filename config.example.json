@@ -1,0 +1,120 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09", 
+  "Resources": {
+    "SpotFleetDaemons": {
+      "Type": "AWS::EC2::SpotFleet", 
+      "Properties": {
+        "SpotFleetRequestConfigData": {
+          "ValidUntil": "", 
+          "LaunchSpecifications": [
+            {
+              "UserData": "", 
+              "Placement": {
+                "AvailabilityZone": "us-west-2a"
+              }, 
+              "ImageId": "ami-28pskidl", 
+              "BlockDeviceMappings": [
+                {
+                  "DeviceName": "", 
+                  "Ebs": {
+                    "DeleteOnTermination": "", 
+                    "VolumeType": "", 
+                    "VolumeSize": ""
+                  }
+                }
+              ], 
+              "SecurityGroups": [
+                {
+                  "GroupId": "sg"
+                }, 
+                {
+                  "GroupId": "sg1"
+                }, 
+                {
+                  "GroupId": "sg2"
+                }
+              ], 
+              "SubnetId": "id", 
+              "IamInstanceProfile": {
+                "Arn": "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
+              }, 
+              "InstanceType": "m4.large"
+            }, 
+            {
+              "UserData": "", 
+              "Placement": {
+                "AvailabilityZone": "us-west-2a"
+              }, 
+              "ImageId": "ami-28pskidl", 
+              "BlockDeviceMappings": [
+                {
+                  "DeviceName": "", 
+                  "Ebs": {
+                    "DeleteOnTermination": "", 
+                    "VolumeType": "", 
+                    "VolumeSize": ""
+                  }
+                }
+              ], 
+              "SecurityGroups": [
+                {
+                  "GroupId": "sg"
+                }, 
+                {
+                  "GroupId": "sg1"
+                }, 
+                {
+                  "GroupId": "sg2"
+                }
+              ], 
+              "SubnetId": "id", 
+              "IamInstanceProfile": {
+                "Arn": "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
+              }, 
+              "InstanceType": "x2.large"
+            }, 
+            {
+              "UserData": "", 
+              "Placement": {
+                "AvailabilityZone": "us-west-2a"
+              }, 
+              "ImageId": "ami-28pskidl", 
+              "BlockDeviceMappings": [
+                {
+                  "DeviceName": "", 
+                  "Ebs": {
+                    "DeleteOnTermination": "", 
+                    "VolumeType": "", 
+                    "VolumeSize": ""
+                  }
+                }
+              ], 
+              "SecurityGroups": [
+                {
+                  "GroupId": "sg"
+                }, 
+                {
+                  "GroupId": "sg1"
+                }, 
+                {
+                  "GroupId": "sg2"
+                }
+              ], 
+              "SubnetId": "id", 
+              "IamInstanceProfile": {
+                "Arn": "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
+              }, 
+              "InstanceType": "test.small"
+            }
+          ], 
+          "IamFleetRole": "", 
+          "TargetCapacity": "", 
+          "ValidFrom": "", 
+          "TerminateInstancesWithExpiration": true, 
+          "SpotPrice": "", 
+          "AllocationStrategy": ""
+        }
+      }
+    }
+  }
+}
