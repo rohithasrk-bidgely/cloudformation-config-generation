@@ -1,6 +1,6 @@
 import json
-
 from collections import OrderedDict
+
 from variables import *
 
 
@@ -17,6 +17,8 @@ class GenerateConfig(object):
         resources["SpotFleetDaemons"] = generate_daemons()
         resources["SpotFleetTargetCapacityHighAlarm"] = generate_target_capacity_alarm(False)
         resources["SpotFleetTargetCapacityLowAlarm"] = generate_target_capacity_alarm(True)
+        resources["SpotFleetScalingUpPolicy"] = generate_scaling_policy(False)
+        resources["SpotFleetScalingDownPolicy"] = generate_scaling_policy(True)
         resources["SpotFleetScaleUpAlarm"] = generate_scale_alarm(False)
         resources["SpotFleetScaleDownAlarm"] = generate_scale_alarm(True)
         aws_config["Resources"] = resources
@@ -117,11 +119,35 @@ class GenerateConfig(object):
                               alarm_actions, ok_actions, scale_alarm_type)
 
 
+    @staticmethod
+    def generate_scaling_policy(down=True):
+        json_data = OrderedDict()
+        json_data["Type"] = scaling_policy_type
+        properties = OrderedDict()
+        properties["PolicyName"] = "stepdownpolicy" if down else "stepuppolicy"
+        properties["PolicyType"] = "StepScaling"
+        properties["ScalingTargetId"] = {"Ref": "SpotFleetScalingTarget"}
+        step_scaling = OrderedDict()
+        step_scaling["AdjustmentType"] = scaling_adjustment_type
+        step_scaling["Cooldown"] = scaling_cooldown
+        step_scaling["MetricAggregationType"] = scaling_metric_type
+        step_scaling["StepAdjustments"] = []
+        step_adjustments = OrderedDict()
+        if down: step_adjustments["MetricIntervalUpperBound"] = scaling_down_metric_bound
+        else: step_adjustments["MetricIntervalLowerBound"] = scaling_up_metric_bound
+        step_adjustments["ScalingAdjustment"] = scaling_down_adj if down else scaling_up_adj
+        step_scaling["StepAdjustments"].append(step_adjustments)
+        properties["StepScalingPolicyConfiguration"] = step_scaling
+        json_data["Properties"] = properties
+        return json_data
+
+
 generate_config = GenerateConfig.generate_config
 generate_daemons = GenerateConfig.generate_daemons
 generate_alarm = GenerateConfig.generate_alarm
 generate_target_capacity_alarm = GenerateConfig.generate_target_capacity_alarm 
 generate_scale_alarm = GenerateConfig.generate_scale_alarm
+generate_scaling_policy = GenerateConfig.generate_scaling_policy
 
 if __name__ == "__main__":
     json_data = generate_config()
