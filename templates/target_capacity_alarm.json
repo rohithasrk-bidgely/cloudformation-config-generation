@@ -1,0 +1,62 @@
+{
+  "SpotFleetTargetCapacityLowAlarm": {
+    "Type": "AWS::CloudWatch::Alarm",
+    "Properties": {
+      "ActionsEnabled": true,
+      "AlarmName": "$NAME-targetcapacity-alarm-low-$TAGENV",
+      "AlarmDescription": "$NAME-targetcapacity-alarm-low-$TAGENV",
+      "Namespace": "AWS/EC2Spot",
+      "MetricName": "MaxPercentCapacityAllocation",
+      "Dimensions": [
+        {
+          "Name": "FleetRequestId",
+          "Value": {
+            "Ref": "SpotFleetDaemons"
+          }
+        }
+      ],
+      "Statistic": "Average",
+      "Period": "300",
+      "EvaluationPeriods": "2",
+      "Threshold": 100,
+      "Unit": "Percent",
+      "ComparisonOperator": "LessThanThreshold",
+      "AlarmActions": [
+        {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:sns:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":SPOT-PROD"
+            ]
+          ]
+        }
+      ],
+      "OKActions": [
+        {
+          "Fn::Join": [
+            "",
+            [
+              "arn:aws:sns:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":SPOT-PROD"
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "SpotFleetScalingUpPolicy": {
+    "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+    "Properties": {
+      "PolicyName": "stepuppolicy",
+      "PolicyType": "StepScaling",
+      "ScalingTargetId": {
+        "Ref": "SpotFleetScalingTarget"
+      },
+      "StepScalingPolicyConfiguration": {
+        "AdjustmentType": "ChangeInCapacity",
+        "Cooldown": 300,
+        "MetricAggregationType": "Average",
+        "StepAdjustments": [
+          {
+            "MetricIntervalLowerBound": 0,
+            "ScalingAdjustment": 1
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "OnDemandAutoScalingGroup": {
+    "Type": "AWS::AutoScaling::AutoScalingGroup",
+    "Properties": {
+      "AutoScalingGroupName": "$NAME-ondemand-asg-$TAGENV",
+      "AvailabilityZones": [
+        "us-west-2a"
+      ],
+      "LaunchConfigurationName": {
+        "Ref": "OnDemandLaunchConfiguration"
+      },
+      "DesiredCapacity": 0,
+      "MaxSize": 0,
+      "MinSize": 0,
+      "Tags": [
+        {
+          "ResourceType": "auto-scaling-group",
+          "ResourceId": "$NAME-ondemand-asg-$TAGENV",
+          "PropagateAtLaunch": true,
+          "Value": "$TAGCOMPONENT",
+          "Key": "Component"
+        },
+        {
+          "ResourceType": "auto-scaling-group",
+          "ResourceId": "$NAME-ondemand-asg-$TAGENV",
+          "PropagateAtLaunch": true,
+          "Value": "$TAGENV",
+          "Key": "Environment"
+        },
+        {
+          "ResourceType": "auto-scaling-group",
+          "ResourceId": "$NAME-ondemand-asg-$TAGENV",
+          "PropagateAtLaunch": true,
+          "Value": "$NAME-ondemand",
+          "Key": "Name"
+        },
+        {
+          "ResourceType": "auto-scaling-group",
+          "ResourceId": "$NAME-ondemand-asg-$TAGENV",
+          "PropagateAtLaunch": true,
+          "Value": "ops",
+          "Key": "Owner"
+        },
+        {
+          "ResourceType": "auto-scaling-group",
+          "ResourceId": "$NAME-ondemand-asg-$TAGENV",
+          "PropagateAtLaunch": true,
+          "Value": "all",
+          "Key": "Utility"
+        }
+      ]
+    }
+  }
+}
