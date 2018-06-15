@@ -32,7 +32,20 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         properties = OrderedDict()
         properties["AllocationStrategy"] = allocation_strategy
-        properties['IamFleetRole'] = iam_fleet_role
+        properties['IamFleetRole'] = {
+                    "Fn::Join":[
+                        "",
+                        [
+                            "arn:aws:iam::" ,
+                            {
+                                "Ref": "AWS::AccountId"
+                            },
+                            ":role",
+                            "/",
+                            iam_fleet_role
+                        ]
+                    ]
+                }
         properties["LaunchSpecifications"] = []
         for subnet_id in subnet_ids:
             for instance_type in instance_types:
@@ -94,10 +107,34 @@ class GenerateConfig(object):
     @staticmethod
     def generate_target_capacity_alarm(low=True):
         alarm_name = "{}-targetcapacity-alarm-{}-{}".format(env_name, "{}", tagenv).format("low" if low else "high")
-        dimensions = []
+        dimensions = [
+            {
+                "Name": "FleetRequestId",
+                "Value": {
+                    "Ref": "SpotFleetDaemons"
+                }
+            }
+        ]
         comparision_operator = "LessThanThreshold" if low else "GreaterThanThreshold"
-        alarm_actions = []
-        ok_actions = []
+        alarm_actions = [
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "arn:aws:sns:",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                            "Ref": "AWS::AccountId"
+                        },
+                        target_capacity_alarmactions
+                    ]
+                ]
+            }
+        ]
+        ok_actions = alarm_actions
         threshold = target_capacity_low_threshold if low else target_capacity_high_threshold
         return generate_alarm(target_capacity_actions_enabled, alarm_name,
                               alarm_name, target_capacity_namespace,
@@ -110,10 +147,36 @@ class GenerateConfig(object):
     @staticmethod
     def generate_scale_alarm(down=True):
         alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(env_name, "{}", tagenv).format("down" if down else "up")
-        dimensions = []
+        dimensions = [
+            {
+                "Name": "QueueName",
+                "Value": scale_alarm_dimensions_value
+            }
+        ]
         comparision_operator = "LessThanThreshold" if down else "GreaterThanThreshold"
-        alarm_actions = []
-        ok_actions = []
+        alarm_actions = [
+            {
+                "Ref": "SpotFleetScaling{}Policy".format("Down" if down else "Up")
+            }
+        ]
+        ok_actions = [
+            {
+                "Fn::Join": [
+                    "",
+                    [
+                        "arn:aws:sns:",
+                        {
+                            "Ref": "AWS::Region"
+                        },
+                        ":",
+                        {
+                            "Ref": "AWS::AccountId"
+                        },
+                        scale_alarm_okactions
+                    ]
+                ]
+            }
+        ]
         threshold = scale_down_threshold if down else scale_up_threshold
         return generate_alarm(scale_actions_enabled, alarm_name, alarm_name,
                               scale_namespace, scale_metric, dimensions,
@@ -151,7 +214,17 @@ class GenerateConfig(object):
         properties = OrderedDict()
         properties["MaxCapacity"] = scaling_max_cap
         properties["MinCapacity"] = scaling_min_cap
-        properties["ResourceId"] = {}
+        properties["ResourceId"] = {
+            "Fn::Join": [
+                "/",
+                [
+                    "spot-fleet-request",
+                    {
+                        "Ref": "SpotFleetDaemons"
+                    }
+                ]
+            ]
+        }
         properties["RoleARN"] = {}
         properties["ScalableDimension"] = scalable_dimension
         properties["ServiceNamespace"] = service_namespace
@@ -163,7 +236,16 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_lc_type
         properties = OrderedDict()
-        device_mappings = []
+        device_mappings = [
+            {
+                "DeviceName": ondemand_lc_device_name,
+                "Ebs": {
+                    "VolumeSize": ondemand_lc_volume_size,
+                    "VolumeType": ondemand_lc_volume_type,
+                    "DeleteonTermination": ondemand_lc_deleteontermination
+                }
+            }
+        ]
         properties["BlockDeviceMappings"] = device_mappings
         properties["EbsOptimized"] =  ondemand_ebsoptimised
         properties["IamInstanceProfile"] = ondemand_iam_profile
@@ -172,8 +254,7 @@ class GenerateConfig(object):
         properties["InstanceType"] = ondemand_instance_type
         properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(env_name, tagenv)
         properties["SecurityGroups"] = security_group_ids
-        userdata = {}
-        properties["UserData"] = userdata
+        properties["UserData"] = user_data
         json_data["Properties"] = properties
         return json_data
 
@@ -189,6 +270,15 @@ class GenerateConfig(object):
         properties["MaxSize"] = ondemand_asg_maxsize
         properties["MinSize"] = ondemand_asg_minsize
         tags = []
+        tag_dict = OrderedDict()
+        tag_dict["ResourceType"] = "auto-scaling-group"
+        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(env_name, tagenv)
+        tag_dict["PropagateAtLaunch"] = 'true'
+        tag_dict["Value"] = ''
+        tag_dict["Key"] = ''
+        for i, j in iter(ondemand_asg_tags):
+            tag_dict.update({"Value":i, "Key":j})
+            tags.append(tag_dict)
         properties["Tags"] = tags
         json_data["Properties"] = properties
         return json_data
