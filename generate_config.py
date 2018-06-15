@@ -17,6 +17,9 @@ class GenerateConfig(object):
         resources["SpotFleetDaemons"] = generate_daemons()
         resources["SpotFleetTargetCapacityHighAlarm"] = generate_target_capacity_alarm(False)
         resources["SpotFleetTargetCapacityLowAlarm"] = generate_target_capacity_alarm(True)
+        resources["OnDemandLaunchConfiguration"] = generate_ondemand_lc()
+        resources["OnDemandAutoScalingGroup"] = generate_ondemand_asg()
+        resources["SpotFleetScalingTarget"] = generate_scaling_target()
         resources["SpotFleetScalingUpPolicy"] = generate_scaling_policy(False)
         resources["SpotFleetScalingDownPolicy"] = generate_scaling_policy(True)
         resources["SpotFleetScaleUpAlarm"] = generate_scale_alarm(False)
@@ -31,7 +34,7 @@ class GenerateConfig(object):
         properties["AllocationStrategy"] = allocation_strategy
         properties['IamFleetRole'] = iam_fleet_role
         properties["LaunchSpecifications"] = []
-        for subnet_id in subnet_ids: 
+        for subnet_id in subnet_ids:
             for instance_type in instance_types:
                 launch_specifications = OrderedDict()
                 launch_specifications["ImageId"] = ami_id
@@ -45,7 +48,7 @@ class GenerateConfig(object):
                 for id in security_group_ids:
                     launch_specifications["SecurityGroups"].append({"GroupId": id})
                 launch_specifications["SubnetId"] = subnet_id
-                
+
                 device_mappings = OrderedDict()
                 device_mappings["DeviceName"] = device_name
                 device_mappings["Ebs"] = OrderedDict()
@@ -98,7 +101,7 @@ class GenerateConfig(object):
         threshold = target_capacity_low_threshold if low else target_capacity_high_threshold
         return generate_alarm(target_capacity_actions_enabled, alarm_name,
                               alarm_name, target_capacity_namespace,
-                              target_capacity_metric, dimensions, 
+                              target_capacity_metric, dimensions,
                               target_capacity_statistic, target_capacity_period,
                               target_capacity_evaluation_period, threshold,
                               target_capacity_unit, comparision_operator,
@@ -141,13 +144,66 @@ class GenerateConfig(object):
         json_data["Properties"] = properties
         return json_data
 
+    @staticmethod
+    def generate_scaling_target():
+        json_data = OrderedDict()
+        json_data["Type"] = scaling_target_type
+        properties = OrderedDict()
+        properties["MaxCapacity"] = scaling_max_cap
+        properties["MinCapacity"] = scaling_min_cap
+        properties["ResourceId"] = {}
+        properties["RoleARN"] = {}
+        properties["ScalableDimension"] = scalable_dimension
+        properties["ServiceNamespace"] = service_namespace
+        json_data["Properties"] = properties
+        return json_data
+
+    @staticmethod
+    def generate_ondemand_lc():
+        json_data = OrderedDict()
+        json_data["Type"] = ondemand_lc_type
+        properties = OrderedDict()
+        device_mappings = []
+        properties["BlockDeviceMappings"] = device_mappings
+        properties["EbsOptimized"] =  ondemand_ebsoptimised
+        properties["IamInstanceProfile"] = ondemand_iam_profile
+        properties["ImageId"] = ondemand_image_id
+        properties["InstanceMonitoring"] = ondemand_instance_monitoring
+        properties["InstanceType"] = ondemand_instance_type
+        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(env_name, tagenv)
+        properties["SecurityGroups"] = security_group_ids
+        userdata = {}
+        properties["UserData"] = userdata
+        json_data["Properties"] = properties
+        return json_data
+
+    @staticmethod
+    def generate_ondemand_asg():
+        json_data = OrderedDict()
+        json_data["Type"] = ondemand_asg_type
+        properties = OrderedDict()
+        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(env_name, tagenv)
+        properties["AvailabilityZones"] = [availability_zone]
+        properties["LaunchConfigurationName"] = {"Ref": "OnDemandLaunchConfiguration"}
+        properties["DesiredCapacity"] = ondemand_asg_desiredcap
+        properties["MaxSize"] = ondemand_asg_maxsize
+        properties["MinSize"] = ondemand_asg_minsize
+        tags = []
+        properties["Tags"] = tags
+        json_data["Properties"] = properties
+        return json_data
+
 
 generate_config = GenerateConfig.generate_config
 generate_daemons = GenerateConfig.generate_daemons
 generate_alarm = GenerateConfig.generate_alarm
-generate_target_capacity_alarm = GenerateConfig.generate_target_capacity_alarm 
+generate_target_capacity_alarm = GenerateConfig.generate_target_capacity_alarm
 generate_scale_alarm = GenerateConfig.generate_scale_alarm
 generate_scaling_policy = GenerateConfig.generate_scaling_policy
+generate_scaling_target = GenerateConfig.generate_scaling_target
+generate_ondemand_lc = GenerateConfig.generate_ondemand_lc
+generate_ondemand_asg = GenerateConfig.generate_ondemand_asg
+
 
 if __name__ == "__main__":
     json_data = generate_config()
