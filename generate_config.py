@@ -225,7 +225,7 @@ class GenerateConfig(object):
                 ]
             ]
         }
-        properties["RoleARN"] = {}
+        properties["RoleARN"] = scaling_target_rolearn
         properties["ScalableDimension"] = scalable_dimension
         properties["ServiceNamespace"] = service_namespace
         json_data["Properties"] = properties
