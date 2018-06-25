@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from variables import *
 
-
 class GenerateConfig(object):
     """
     An class to generate the spot fleet resource allocation configuration
@@ -14,21 +13,29 @@ class GenerateConfig(object):
         aws_config = OrderedDict()
         aws_config["AWSTemplateFormatVersion"] = aws_template_format_version
         resources = OrderedDict()
-        resources["SpotFleetDaemons"] = generate_daemons()
-        resources["SpotFleetTargetCapacityHighAlarm"] = generate_target_capacity_alarm(False)
-        resources["SpotFleetTargetCapacityLowAlarm"] = generate_target_capacity_alarm(True)
-        resources["OnDemandLaunchConfiguration"] = generate_ondemand_lc()
-        resources["OnDemandAutoScalingGroup"] = generate_ondemand_asg()
-        resources["SpotFleetScalingTarget"] = generate_scaling_target()
-        resources["SpotFleetScalingUpPolicy"] = generate_scaling_policy(False)
-        resources["SpotFleetScalingDownPolicy"] = generate_scaling_policy(True)
-        resources["SpotFleetScaleUpAlarm"] = generate_scale_alarm(False)
-        resources["SpotFleetScaleDownAlarm"] = generate_scale_alarm(True)
+        for name in COMPONENTS:
+            generate_component(resources, name)
         aws_config["Resources"] = resources
         return aws_config
 
     @staticmethod
-    def generate_daemons():
+    def generate_component(resources, name):
+        from variables import *
+        exec("from variables.{} import *".format(name.lower()))
+        resources["{}-daemon".format(name)] = generate_daemons(name)
+        resources["{}-TargetCapacityHighAlarm".format(name)] = generate_target_capacity_alarm(False, name)
+        resources["{}-TargetCapacityLowAlarm".format(name)] = generate_target_capacity_alarm(True, name)
+        resources["{}-OnDemandLaunchConfiguration".format(name)] = generate_ondemand_lc(name)
+        resources["{}-OnDemandAutoScalingGroup".format(name)] = generate_ondemand_asg(name)
+        resources["{}-ScalingTarget".format(name)] = generate_scaling_target(name)
+        resources["{}-ScalingUpPolicy".format(name)] = generate_scaling_policy(name, False)
+        resources["{}-ScalingDownPolicy".format(name)] = generate_scaling_policy(name, True)
+        resources["{}-ScaleUpAlarm".format(name)] = generate_scale_alarm(name, False)
+        resources["{}-ScaleDownAlarm".format(name)] = generate_scale_alarm(name, True)
+        return resources
+
+    @staticmethod
+    def generate_daemons(name):
         json_data = OrderedDict()
         properties = OrderedDict()
         properties["AllocationStrategy"] = allocation_strategy
@@ -76,6 +83,7 @@ class GenerateConfig(object):
         properties['ValidFrom'] = valid_from
         properties['ValidUntil'] = valid_until
         json_data["Type"] = daemon_type
+        # Verify the below line variable name
         json_data["Properties"] = {"SpotFleetRequestConfigData": properties}
         return json_data
 
@@ -105,13 +113,13 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_target_capacity_alarm(low=True):
+    def generate_target_capacity_alarm(name, low=True):
         alarm_name = "{}-targetcapacity-alarm-{}-{}".format(env_name, "{}", tagenv).format("low" if low else "high")
         dimensions = [
             {
                 "Name": "FleetRequestId",
                 "Value": {
-                    "Ref": "SpotFleetDaemons"
+                    "Ref": "{}-daemon".format(name)
                 }
             }
         ]
@@ -145,7 +153,7 @@ class GenerateConfig(object):
                               alarm_actions, ok_actions, target_capacity_alarm_type)
 
     @staticmethod
-    def generate_scale_alarm(down=True):
+    def generate_scale_alarm(name, down=True):
         alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(env_name, "{}", tagenv).format("down" if down else "up")
         dimensions = [
             {
@@ -156,7 +164,7 @@ class GenerateConfig(object):
         comparision_operator = "LessThanThreshold" if down else "GreaterThanThreshold"
         alarm_actions = [
             {
-                "Ref": "SpotFleetScaling{}Policy".format("Down" if down else "Up")
+                "Ref": "{}-Scaling{}Policy".format(name, "Down" if down else "Up")
             }
         ]
         ok_actions = [
@@ -186,13 +194,13 @@ class GenerateConfig(object):
 
 
     @staticmethod
-    def generate_scaling_policy(down=True):
+    def generate_scaling_policy(name, down=True):
         json_data = OrderedDict()
         json_data["Type"] = scaling_policy_type
         properties = OrderedDict()
         properties["PolicyName"] = "stepdownpolicy" if down else "stepuppolicy"
         properties["PolicyType"] = "StepScaling"
-        properties["ScalingTargetId"] = {"Ref": "SpotFleetScalingTarget"}
+        properties["ScalingTargetId"] = {"Ref": "{}-ScalingTarget".format(name)}
         step_scaling = OrderedDict()
         step_scaling["AdjustmentType"] = scaling_adjustment_type
         step_scaling["Cooldown"] = scaling_cooldown
@@ -208,7 +216,7 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_scaling_target():
+    def generate_scaling_target(name):
         json_data = OrderedDict()
         json_data["Type"] = scaling_target_type
         properties = OrderedDict()
@@ -220,7 +228,7 @@ class GenerateConfig(object):
                 [
                     "spot-fleet-request",
                     {
-                        "Ref": "SpotFleetDaemons"
+                        "Ref": "{}-Daemon".format(name)
                     }
                 ]
             ]
@@ -232,7 +240,7 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_ondemand_lc():
+    def generate_ondemand_lc(name):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_lc_type
         properties = OrderedDict()
@@ -259,13 +267,13 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_ondemand_asg():
+    def generate_ondemand_asg(name):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_asg_type
         properties = OrderedDict()
         properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(env_name, tagenv)
         properties["AvailabilityZones"] = [availability_zone]
-        properties["LaunchConfigurationName"] = {"Ref": "OnDemandLaunchConfiguration"}
+        properties["LaunchConfigurationName"] = {"Ref": "{}-OnDemandLaunchConfiguration".format(name)}
         properties["DesiredCapacity"] = ondemand_asg_desiredcap
         properties["MaxSize"] = ondemand_asg_maxsize
         properties["MinSize"] = ondemand_asg_minsize
@@ -285,6 +293,7 @@ class GenerateConfig(object):
 
 
 generate_config = GenerateConfig.generate_config
+generate_component = GenerateConfig.generate_component
 generate_daemons = GenerateConfig.generate_daemons
 generate_alarm = GenerateConfig.generate_alarm
 generate_target_capacity_alarm = GenerateConfig.generate_target_capacity_alarm
@@ -300,3 +309,4 @@ if __name__ == "__main__":
     with  open ("config.json", "w") as config_json:
         config_json.write(json.dumps(json_data, indent=2))
         config_json.close()
+        resources = OrderedDict()
