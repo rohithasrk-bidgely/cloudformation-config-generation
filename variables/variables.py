@@ -2,6 +2,8 @@ env_name = "$NAME"
 tagenv = "$TAGENV"
 tagcomponent = "$TAGCOMPONENT"
 
+scaling_policy = True
+
 iam_fleet_role = "IAMRole-Testing"
 valid_from = ''
 valid_until = ''

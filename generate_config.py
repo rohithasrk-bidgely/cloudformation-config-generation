@@ -20,18 +20,19 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_component(resources, name):
-        from variables import *
-        exec("from variables.{} import *".format(name.lower()))
+        exec("from variables import *", globals())
+        exec("from variables.{} import *".format(name.lower()), globals())
         resources["{}-daemon".format(name)] = generate_daemons(name)
         resources["{}-TargetCapacityHighAlarm".format(name)] = generate_target_capacity_alarm(False, name)
         resources["{}-TargetCapacityLowAlarm".format(name)] = generate_target_capacity_alarm(True, name)
         resources["{}-OnDemandLaunchConfiguration".format(name)] = generate_ondemand_lc(name)
         resources["{}-OnDemandAutoScalingGroup".format(name)] = generate_ondemand_asg(name)
-        resources["{}-ScalingTarget".format(name)] = generate_scaling_target(name)
-        resources["{}-ScalingUpPolicy".format(name)] = generate_scaling_policy(name, False)
-        resources["{}-ScalingDownPolicy".format(name)] = generate_scaling_policy(name, True)
-        resources["{}-ScaleUpAlarm".format(name)] = generate_scale_alarm(name, False)
-        resources["{}-ScaleDownAlarm".format(name)] = generate_scale_alarm(name, True)
+        if scaling_policy:
+            resources["{}-ScalingTarget".format(name)] = generate_scaling_target(name)
+            resources["{}-ScalingUpPolicy".format(name)] = generate_scaling_policy(name, False)
+            resources["{}-ScalingDownPolicy".format(name)] = generate_scaling_policy(name, True)
+            resources["{}-ScaleUpAlarm".format(name)] = generate_scale_alarm(name, False)
+            resources["{}-ScaleDownAlarm".format(name)] = generate_scale_alarm(name, True)
         return resources
 
     @staticmethod
@@ -290,7 +291,6 @@ class GenerateConfig(object):
         properties["Tags"] = tags
         json_data["Properties"] = properties
         return json_data
-
 
 generate_config = GenerateConfig.generate_config
 generate_component = GenerateConfig.generate_component
