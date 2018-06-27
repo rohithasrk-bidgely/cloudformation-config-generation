@@ -1,6 +1,12 @@
-env_name = "$NAME"
+tag_name = "$NAME"
 tagenv = "$TAGENV"
 tagcomponent = "$TAGCOMPONENT"
+owner = "ops"
+utility = "all"
+snapshot_id = "$SNAPSHOT_ID"
+subnet_id = "subnet-example"
+bidgely_env = "bidgely-env-test"
+security_groups = "sg, sg1, sg2"
 
 scaling_policy = True
 
@@ -14,7 +20,6 @@ iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/dev-iam-insta
 security_group_ids = ["sg", "sg1", "sg2"]
 subnet_ids = ["id"]
 instance_types = ["m4.large", "x2.large", "test.small"]
-user_data = ''
 availability_zone = "us-west-2a"
 device_name = ''
 delete_on_termination = ''
@@ -40,7 +45,7 @@ ondemand_asg_desiredcap = 0
 ondemand_asg_maxsize = 0
 ondemand_asg_minsize = 0
 ondemand_asg_tags = [(tagenv, "Environment"), (tagcomponent, "Component"),
-                    ("{}-ondemand".format(env_name), "Name"), ("ops", "Owner"),
+                    ("{}-ondemand".format(tag_name), "Name"), ("ops", "Owner"),
                     ("all", "Utility")]
 
 

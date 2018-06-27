@@ -2,6 +2,7 @@ import json
 from collections import OrderedDict
 
 from variables import *
+from variables.userdata import generate_user_data
 
 class GenerateConfig(object):
     """
@@ -64,7 +65,7 @@ class GenerateConfig(object):
                 launch_specifications["IamInstanceProfile"] =  OrderedDict()
                 launch_specifications["IamInstanceProfile"]["Arn"] = iam_instance_profile
                 launch_specifications["BlockDeviceMappings"] = []
-                launch_specifications["UserData"] = user_data
+                launch_specifications["UserData"] = generate_user_data(name)
                 launch_specifications["SecurityGroups"] = []
                 for id in security_group_ids:
                     launch_specifications["SecurityGroups"].append({"GroupId": id})
@@ -115,7 +116,7 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_target_capacity_alarm(name, low=True):
-        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(env_name, "{}", tagenv).format("low" if low else "high")
+        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(tag_name, "{}", tagenv).format("low" if low else "high")
         dimensions = [
             {
                 "Name": "FleetRequestId",
@@ -155,7 +156,7 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_scale_alarm(name, down=True):
-        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(env_name, "{}", tagenv).format("down" if down else "up")
+        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(tag_name, "{}", tagenv).format("down" if down else "up")
         dimensions = [
             {
                 "Name": "QueueName",
@@ -261,9 +262,9 @@ class GenerateConfig(object):
         properties["ImageId"] = ondemand_image_id
         properties["InstanceMonitoring"] = ondemand_instance_monitoring
         properties["InstanceType"] = ondemand_instance_type
-        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(env_name, tagenv)
+        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(tag_name, tagenv)
         properties["SecurityGroups"] = security_group_ids
-        properties["UserData"] = user_data
+        properties["UserData"] = generate_user_data(name)
         json_data["Properties"] = properties
         return json_data
 
@@ -272,7 +273,7 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_asg_type
         properties = OrderedDict()
-        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(env_name, tagenv)
+        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(tag_name, tagenv)
         properties["AvailabilityZones"] = [availability_zone]
         properties["LaunchConfigurationName"] = {"Ref": "{}-OnDemandLaunchConfiguration".format(name)}
         properties["DesiredCapacity"] = ondemand_asg_desiredcap
@@ -281,7 +282,7 @@ class GenerateConfig(object):
         tags = []
         tag_dict = OrderedDict()
         tag_dict["ResourceType"] = "auto-scaling-group"
-        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(env_name, tagenv)
+        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(tag_name, tagenv)
         tag_dict["PropagateAtLaunch"] = 'true'
         tag_dict["Value"] = ''
         tag_dict["Key"] = ''
