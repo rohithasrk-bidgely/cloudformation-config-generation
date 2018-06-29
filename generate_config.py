@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 from variables import *
 from variables.userdata import generate_user_data
+from variables.asg_tags import generate_asg_tags
 
 class GenerateConfig(object):
     """
@@ -22,18 +23,19 @@ class GenerateConfig(object):
     @staticmethod
     def generate_component(resources, name):
         exec("from variables import *", globals())
-        exec("from variables.{} import *".format(name.lower()), globals())
-        resources["{}-daemon".format(name)] = generate_daemons(name)
-        resources["{}-TargetCapacityHighAlarm".format(name)] = generate_target_capacity_alarm(False, name)
-        resources["{}-TargetCapacityLowAlarm".format(name)] = generate_target_capacity_alarm(True, name)
-        resources["{}-OnDemandLaunchConfiguration".format(name)] = generate_ondemand_lc(name)
-        resources["{}-OnDemandAutoScalingGroup".format(name)] = generate_ondemand_asg(name)
+        exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+        resource_name = name.replace('-','')
+        resources["{}Daemon".format(resource_name)] = generate_daemons(name)
+        resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
+        resources["{}TargetCapacityLowAlarm".format(resource_name)] = generate_target_capacity_alarm(name, True)
+        resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name)
+        resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name)
         if scaling_policy:
-            resources["{}-ScalingTarget".format(name)] = generate_scaling_target(name)
-            resources["{}-ScalingUpPolicy".format(name)] = generate_scaling_policy(name, False)
-            resources["{}-ScalingDownPolicy".format(name)] = generate_scaling_policy(name, True)
-            resources["{}-ScaleUpAlarm".format(name)] = generate_scale_alarm(name, False)
-            resources["{}-ScaleDownAlarm".format(name)] = generate_scale_alarm(name, True)
+            resources["{}ScalingTarget".format(resource_name)] = generate_scaling_target(name)
+            resources["{}ScalingUpPolicy".format(resource_name)] = generate_scaling_policy(name, False)
+            resources["{}ScalingDownPolicy".format(resource_name)] = generate_scaling_policy(name, True)
+            resources["{}ScaleUpAlarm".format(resource_name)] = generate_scale_alarm(name, False)
+            resources["{}ScaleDownAlarm".format(resource_name)] = generate_scale_alarm(name, True)
         return resources
 
     @staticmethod
@@ -116,12 +118,14 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_target_capacity_alarm(name, low=True):
-        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(tag_name, "{}", tagenv).format("low" if low else "high")
+        comp_name = name.split('-')[0]
+        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(comp_name, "{}", tagenv).format("low" if low else "high")
+        resource_name = name.replace('-','').replace('_','')
         dimensions = [
             {
                 "Name": "FleetRequestId",
                 "Value": {
-                    "Ref": "{}-daemon".format(name)
+                    "Ref": "{}Daemon".format(resource_name)
                 }
             }
         ]
@@ -156,7 +160,8 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_scale_alarm(name, down=True):
-        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(tag_name, "{}", tagenv).format("down" if down else "up")
+        comp_name = name.split('-')[0]
+        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(comp_name, "{}", tagenv).format("down" if down else "up")
         dimensions = [
             {
                 "Name": "QueueName",
@@ -164,9 +169,10 @@ class GenerateConfig(object):
             }
         ]
         comparision_operator = "LessThanThreshold" if down else "GreaterThanThreshold"
+        resource_name = name.replace('-','')
         alarm_actions = [
             {
-                "Ref": "{}-Scaling{}Policy".format(name, "Down" if down else "Up")
+                "Ref": "{}Scaling{}Policy".format(resource_name, "Down" if down else "Up")
             }
         ]
         ok_actions = [
@@ -200,9 +206,11 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = scaling_policy_type
         properties = OrderedDict()
+        resource_name = name.replace('-','').replace('_','')
         properties["PolicyName"] = "stepdownpolicy" if down else "stepuppolicy"
         properties["PolicyType"] = "StepScaling"
-        properties["ScalingTargetId"] = {"Ref": "{}-ScalingTarget".format(name)}
+        resource_name = name.replace('-','')
+        properties["ScalingTargetId"] = {"Ref": "{}ScalingTarget".format(resource_name)}
         step_scaling = OrderedDict()
         step_scaling["AdjustmentType"] = scaling_adjustment_type
         step_scaling["Cooldown"] = scaling_cooldown
@@ -224,13 +232,14 @@ class GenerateConfig(object):
         properties = OrderedDict()
         properties["MaxCapacity"] = scaling_max_cap
         properties["MinCapacity"] = scaling_min_cap
+        resource_name = name.replace('-','')
         properties["ResourceId"] = {
             "Fn::Join": [
                 "/",
                 [
                     "spot-fleet-request",
                     {
-                        "Ref": "{}-Daemon".format(name)
+                        "Ref": "{}Daemon".format(resource_name)
                     }
                 ]
             ]
@@ -252,17 +261,18 @@ class GenerateConfig(object):
                 "Ebs": {
                     "VolumeSize": ondemand_lc_volume_size,
                     "VolumeType": ondemand_lc_volume_type,
-                    "DeleteonTermination": ondemand_lc_deleteontermination
+                    "DeleteOnTermination": ondemand_lc_deleteontermination
                 }
             }
         ]
         properties["BlockDeviceMappings"] = device_mappings
         properties["EbsOptimized"] =  ondemand_ebsoptimised
         properties["IamInstanceProfile"] = ondemand_iam_profile
-        properties["ImageId"] = ondemand_image_id
+        properties["ImageId"] = ami_id
         properties["InstanceMonitoring"] = ondemand_instance_monitoring
         properties["InstanceType"] = ondemand_instance_type
-        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(tag_name, tagenv)
+        comp_name = name.split('-')[0]
+        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(comp_name, tagenv)
         properties["SecurityGroups"] = security_group_ids
         properties["UserData"] = generate_user_data(name)
         json_data["Properties"] = properties
@@ -273,21 +283,29 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_asg_type
         properties = OrderedDict()
-        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(tag_name, tagenv)
+        resource_name = name.replace('-','').replace('_','')
+        comp_name = name.split('-')[0]
+        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
         properties["AvailabilityZones"] = [availability_zone]
-        properties["LaunchConfigurationName"] = {"Ref": "{}-OnDemandLaunchConfiguration".format(name)}
+        properties["LaunchConfigurationName"] = {"Ref": "{}OnDemandLaunchConfiguration".format(resource_name)}
         properties["DesiredCapacity"] = ondemand_asg_desiredcap
         properties["MaxSize"] = ondemand_asg_maxsize
         properties["MinSize"] = ondemand_asg_minsize
         tags = []
         tag_dict = OrderedDict()
         tag_dict["ResourceType"] = "auto-scaling-group"
-        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(tag_name, tagenv)
+        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
         tag_dict["PropagateAtLaunch"] = 'true'
         tag_dict["Value"] = ''
         tag_dict["Key"] = ''
+        ondemand_asg_tags = generate_asg_tags(name)
         for i, j in iter(ondemand_asg_tags):
-            tag_dict.update({"Value":i, "Key":j})
+            tag_dict = OrderedDict()
+            tag_dict["ResourceType"] = "auto-scaling-group"
+            tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
+            tag_dict["PropagateAtLaunch"] = 'true'
+            tag_dict["Value"] = i
+            tag_dict["Key"] = j
             tags.append(tag_dict)
         properties["Tags"] = tags
         json_data["Properties"] = properties

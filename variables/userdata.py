@@ -1,7 +1,7 @@
 from . import *
 
 def generate_user_data(name):
-    exec("from variables.{} import *".format(name.lower()), globals())
+    exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
     user_data = {
         "Fn::Base64": {
             "Fn::Join": [
@@ -13,7 +13,7 @@ def generate_user_data(name):
                     },
                     "echo \"=================USER SCRIPT START====================\"",
                     "echo\n",
-                    "TAGNAME={}\n".format(tag_name),
+                    "TAGNAME={}\n".format(name),
                     "TAGCOMPONENT={}\n".format(tagcomponent),
                     "TAGENV={}\n".format(tagenv),
                     "OWNER={}\n".format(owner),
