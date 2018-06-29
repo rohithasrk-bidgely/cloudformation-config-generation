@@ -6,11 +6,16 @@ utility = "all"
 snapshot_id = "$SNAPSHOT_ID"
 subnet_id = "subnet-example"
 bidgely_env = "bidgely-env-test"
-security_groups = "sg, sg1, sg2"
+keypair = "dev"
+instance_profile = ""
+queue_suffix = ""
+repo = "repo2.bidgely.com"
+repo_dir = "dev"
+s3_artifact_bucket = "bidgely-devops/spot"
 
 scaling_policy = True
 
-iam_fleet_role = "perftestN-IAMRole-ZJO7JKXIM91F"
+iam_fleet_role = "dev-iam-spot-fleet-role"
 valid_from = "2017-05-08T00:01:00Z"
 valid_until = "2018-11-11T12:08:17Z"
 allocation_strategy = "lowestPrice"

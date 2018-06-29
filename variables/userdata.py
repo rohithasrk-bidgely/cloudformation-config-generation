@@ -2,6 +2,7 @@ from . import *
 
 def generate_user_data(name):
     exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+    security_groups = ",".join(security_group_ids)
     user_data = {
         "Fn::Base64": {
             "Fn::Join": [
@@ -26,12 +27,12 @@ def generate_user_data(name):
                     "JAVA_HOME=/usr/lib/jvm/java-8-oracle/jre\n",
                     "BIDGELY_ENV={}\n".format(bidgely_env),
                     "SECURITYGROUP='{}'\n".format(security_groups),
-                    "KEYPAIR=naprod\n",
-                    "INSTANCEPROFILE=default-instance-role-prod\n",
-                    "QUEUE_SUFFIX=\n",
-                    "REPO=repo2.bidgely.com\n",
-                    "REPODIR=prodna\n",
-                    "S3ARTIFACTSBUCKET=bidgely-devops/spot\n",
+                    "KEYPAIR={}\n".format(keypair),
+                    "INSTANCEPROFILE={}\n".format(instance_profile),
+                    "QUEUE_SUFFIX={}\n".format(queue_suffix),
+                    "REPO={}\n".format(repo),
+                    "REPODIR={}\n".format(repo_dir),
+                    "S3ARTIFACTSBUCKET={}\n".format(s3_artifact_bucket),
                 ]
             ]
         }
