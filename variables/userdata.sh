@@ -1,3 +1,9 @@
+# Setup instance directory
+mkdir -p /mnt/opt/bidgely
+mkdir -p /mnt/var/log/bidgely
+ln -s /mnt/var/log/bidgely /var/log/
+ln -s /mnt/opt/bidgely/ /opt/
+
 # TAG's Instance and Its Volumes
 REGION=$(curl -s 169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//');
 

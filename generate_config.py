@@ -26,16 +26,17 @@ class GenerateConfig(object):
         exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
         resource_name = name.replace('-','')
         resources["{}Daemon".format(resource_name)] = generate_daemons(name)
-        resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
-        resources["{}TargetCapacityLowAlarm".format(resource_name)] = generate_target_capacity_alarm(name, True)
-        resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name)
-        resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name)
-        if scaling_policy:
-            resources["{}ScalingTarget".format(resource_name)] = generate_scaling_target(name)
-            resources["{}ScalingUpPolicy".format(resource_name)] = generate_scaling_policy(name, False)
-            resources["{}ScalingDownPolicy".format(resource_name)] = generate_scaling_policy(name, True)
-            resources["{}ScaleUpAlarm".format(resource_name)] = generate_scale_alarm(name, False)
-            resources["{}ScaleDownAlarm".format(resource_name)] = generate_scale_alarm(name, True)
+        if not only_spot_resources:
+            resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
+            resources["{}TargetCapacityLowAlarm".format(resource_name)] = generate_target_capacity_alarm(name, True)
+            resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name)
+            resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name)
+            if scaling_policy:
+                resources["{}ScalingTarget".format(resource_name)] = generate_scaling_target(name)
+                resources["{}ScalingUpPolicy".format(resource_name)] = generate_scaling_policy(name, False)
+                resources["{}ScalingDownPolicy".format(resource_name)] = generate_scaling_policy(name, True)
+                resources["{}ScaleUpAlarm".format(resource_name)] = generate_scale_alarm(name, False)
+                resources["{}ScaleDownAlarm".format(resource_name)] = generate_scale_alarm(name, True)
         return resources
 
     @staticmethod

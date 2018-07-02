@@ -3,6 +3,7 @@ from . import *
 def generate_user_data(name):
     exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
     security_groups = ",".join(security_group_ids)
+    if len(subnet_ids)==1: subnet_id = subnet_ids[0]
     user_data = {
         "Fn::Base64": {
             "Fn::Join": [
@@ -33,6 +34,7 @@ def generate_user_data(name):
                     "REPO={}\n".format(repo),
                     "REPODIR={}\n".format(repo_dir),
                     "S3ARTIFACTSBUCKET={}\n".format(s3_artifact_bucket),
+                    "CLOUDWATCH={}\n".format(cloud_watch),
                 ]
             ]
         }
