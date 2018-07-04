@@ -12,8 +12,12 @@ repo_dir = "nonprodqa"
 s3_artifact_bucket = "bidgely-artifacts/operations"
 cloud_watch = "NO"
 
+
+# Putting scaling_policy = True generates scale alarms and other relevant resources.
 scaling_policy = True
-only_spot_resources = True
+
+# Generates only_spot_resources for a particular component. If set here, it generates only_spot_resources for all components.
+only_spot_resources = False
 
 iam_fleet_role = "iam-spot-fleet-role"
 valid_from = "2017-07-02T00:01:00Z"

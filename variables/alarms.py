@@ -1,3 +1,4 @@
+# Alarm configuration variables
 target_capacity_actions_enabled = "true"
 target_capacity_namespace = "AWS/EC2Spot"
 target_capacity_metric = "MaxPercentCapacityAllocation"
