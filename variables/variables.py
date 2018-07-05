@@ -17,7 +17,16 @@ cloud_watch = "NO"
 scaling_policy = True
 
 # Generates only_spot_resources for a particular component. If set here, it generates only_spot_resources for all components.
-only_spot_resources = False
+only_spot_resources = True
+
+launch_template_type = "AWS::EC2::LaunchTemplate"
+key_name = "dev"
+lc_placement_tenancy = "default"
+monitoring_enabled = "false"
+launch_template_resource_type = "instance"
+replace_unhealthy_instances = "false"
+launch_template_version = 1
+instance_weighted_capacity = 1
 
 iam_fleet_role = "iam-spot-fleet-role"
 valid_from = "2017-07-02T00:01:00Z"
@@ -25,8 +34,8 @@ valid_until = "2027-07-02T00:00:00Z"
 allocation_strategy = "lowestPrice"
 target_capacity = 0
 spot_price = 0.333
-iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/default-instance-role"
-security_group_ids = ["sg-7cefc601"]
+iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
+security_group_ids = ["sg-b3c2b8cc", "sg-f0ccb68f"]
 subnet_ids = ["subnet-63443d05"]
 instance_types = ["m3.xlarge", "r3.xlarge", "m5d.xlarge", "c3.2xlarge",
                   "m3.2xlarge", "c5d.2xlarge", "m5d.2xlarge", "r3.2xlarge",

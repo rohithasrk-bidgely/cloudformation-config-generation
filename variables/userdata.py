@@ -1,5 +1,6 @@
 from . import *
 
+
 def generate_user_data(name):
     exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
     security_groups = ",".join(security_group_ids)

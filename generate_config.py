@@ -2,13 +2,18 @@ import json
 from collections import OrderedDict
 
 from variables import *
-from variables.userdata import generate_user_data
 from variables.asg_tags import generate_asg_tags
+from variables.userdata import generate_user_data
+
 
 class GenerateConfig(object):
     """
     An class to generate the spot fleet resource allocation configuration
     """
+
+    @staticmethod
+    def get_launch_template_version(name):
+        pass
 
     @staticmethod
     def generate_config():
@@ -24,7 +29,8 @@ class GenerateConfig(object):
     def generate_component(resources, name):
         exec("from variables import *", globals())
         exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
-        resource_name = name.replace('-','')
+        resource_name = name.split('-')[0]
+        resources["{}LaunchTemplate".format(resource_name)] = generate_launch_template(name)
         resources["{}Daemon".format(resource_name)] = generate_daemons(name)
         if not only_spot_resources:
             resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
@@ -39,11 +45,60 @@ class GenerateConfig(object):
                 resources["{}ScaleDownAlarm".format(resource_name)] = generate_scale_alarm(name, True)
         return resources
 
+
+    @staticmethod
+    def generate_launch_template(name):
+        json_data = OrderedDict()
+        json_data["Type"] = launch_template_type
+        properties = OrderedDict()
+        comp_name = name.split('-')[0]
+        properties["LaunchTemplateName"] = "{}LaunchTemplate".format(comp_name)
+        lt_data = OrderedDict()
+        lt_data["KeyName"] = key_name
+        lt_data["Placement"] = {"Tenancy": lc_placement_tenancy}
+        lt_data["ImageId"] = ami_id
+        lt_data["Monitoring"] = {"Enabled": monitoring_enabled}
+        tag_specs = OrderedDict()
+        tag_specs_array = [
+                {
+                    "Key": "Name" ,
+                    "Value": name
+                },
+                {
+                    "Key": "Component" ,
+                    "Value": tagcomponent
+                },
+                {
+                    "Key": "Environment" ,
+                    "Value": tagenv
+                },
+                {
+                    "Key": "Owner" ,
+                    "Value": owner
+                },
+                {
+                    "Key": "Utility" ,
+                    "Value": utility
+                }
+                ]
+        tag_specs["Tags"] = tag_specs_array
+        tag_specs["ResourceType"] = launch_template_resource_type
+        lt_data["TagSpecifications"] = [tag_specs]
+        lt_data["IamInstanceProfile"] = {"Arn": iam_instance_profile}
+        lt_data["UserData"] = generate_user_data(name)
+        lt_data["SecurityGroupIds"] = security_group_ids
+        properties["LaunchTemplateData"] = lt_data
+        json_data["Properties"] = properties
+        return json_data
+
     @staticmethod
     def generate_daemons(name):
+        resource_name = name.split('-')[0]
         json_data = OrderedDict()
+        json_data["Type"] = "AWS::EC2::SpotFleet"
         properties = OrderedDict()
         properties["AllocationStrategy"] = allocation_strategy
+        properties["ReplaceUnhealthyInstances"] = replace_unhealthy_instances
         properties['IamFleetRole'] = {
                     "Fn::Join":[
                         "",
@@ -58,37 +113,24 @@ class GenerateConfig(object):
                         ]
                     ]
                 }
-        properties["LaunchSpecifications"] = []
+        launch_template_configs = OrderedDict()
+        launch_template_configs["LaunchTemplateSpecification"] = {
+                "LaunchTemplateId": {
+                    "Ref": "{}LaunchTemplate".format(resource_name)
+                    },
+                    "Version": launch_template_version
+                }
+        launch_template_configs["Overrides"] = []
         for subnet_id in subnet_ids:
             for instance_type in instance_types:
-                launch_specifications = OrderedDict()
-                launch_specifications["ImageId"] = ami_id
-                launch_specifications["InstanceType"] = instance_type
-                launch_specifications["Placement"] = {"AvailabilityZone": availability_zone}
-                launch_specifications["IamInstanceProfile"] =  OrderedDict()
-                launch_specifications["IamInstanceProfile"]["Arn"] = iam_instance_profile
-                launch_specifications["BlockDeviceMappings"] = []
-                launch_specifications["UserData"] = generate_user_data(name)
-                launch_specifications["SecurityGroups"] = []
-                for id in security_group_ids:
-                    launch_specifications["SecurityGroups"].append({"GroupId": id})
-                launch_specifications["SubnetId"] = subnet_id
-
-                device_mappings = OrderedDict()
-                device_mappings["DeviceName"] = device_name
-                device_mappings["Ebs"] = OrderedDict()
-                device_mappings["Ebs"]["DeleteOnTermination"] = delete_on_termination
-                device_mappings["Ebs"]["VolumeSize"] = ebs_volume_size
-                device_mappings["Ebs"]["VolumeType"] = ebs_volume_type
-                launch_specifications["BlockDeviceMappings"].append(device_mappings)
-                properties["LaunchSpecifications"].append(launch_specifications)
+                launch_template_configs["Overrides"].append({
+                    "InstanceType": instance_type,
+                    "WeightedCapacity": instance_weighted_capacity,
+                    "SubnetId": subnet_id
+                    })
+        properties["LaunchTemplateConfigs"] = [launch_template_configs]
         properties["SpotPrice"] = spot_price
         properties["TargetCapacity"] = target_capacity
-        properties["TerminateInstancesWithExpiration"] = True
-        properties['ValidFrom'] = valid_from
-        properties['ValidUntil'] = valid_until
-        json_data["Type"] = daemon_type
-        # Verify the below line variable name
         json_data["Properties"] = {"SpotFleetRequestConfigData": properties}
         return json_data
 
@@ -313,6 +355,7 @@ class GenerateConfig(object):
         return json_data
 
 generate_config = GenerateConfig.generate_config
+generate_launch_template = GenerateConfig.generate_launch_template
 generate_component = GenerateConfig.generate_component
 generate_daemons = GenerateConfig.generate_daemons
 generate_alarm = GenerateConfig.generate_alarm

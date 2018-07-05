@@ -1,5 +1,6 @@
 from variables import *
 
+
 def generate_asg_tags(name):
     exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
     resource_name = name.split('-')[0]
