@@ -1,6 +1,8 @@
 import json
 from collections import OrderedDict
 
+import boto3
+
 from variables import *
 from variables.asg_tags import generate_asg_tags
 from variables.userdata import generate_user_data
@@ -12,8 +14,18 @@ class GenerateConfig(object):
     """
 
     @staticmethod
-    def get_launch_template_version(name):
-        pass
+    def get_launch_template_version_number(name):
+        resource_name = name.split('-')[0]
+        client = boto3.client('ec2')
+        version_number = 1
+        try:
+            response = client.describe_launch_template_versions(
+                        LaunchTemplateName="{}LaunchTemplate".format(resource_name)
+                    )
+            version_number = response.get('LaunchTemplateVersions')[0].get('VersionNumber') + 1
+        except Exception as e:
+            pass
+        return version_number
 
     @staticmethod
     def generate_config():
@@ -118,7 +130,7 @@ class GenerateConfig(object):
                 "LaunchTemplateId": {
                     "Ref": "{}LaunchTemplate".format(resource_name)
                     },
-                    "Version": launch_template_version
+                    "Version": get_launch_template_version_number(name)
                 }
         launch_template_configs["Overrides"] = []
         for subnet_id in subnet_ids:
@@ -355,6 +367,7 @@ class GenerateConfig(object):
         return json_data
 
 generate_config = GenerateConfig.generate_config
+get_launch_template_version_number = GenerateConfig.get_launch_template_version_number
 generate_launch_template = GenerateConfig.generate_launch_template
 generate_component = GenerateConfig.generate_component
 generate_daemons = GenerateConfig.generate_daemons
