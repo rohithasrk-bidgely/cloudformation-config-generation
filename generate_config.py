@@ -99,6 +99,19 @@ class GenerateConfig(object):
         lt_data["IamInstanceProfile"] = {"Arn": iam_instance_profile}
         lt_data["UserData"] = generate_user_data(name)
         lt_data["SecurityGroupIds"] = security_group_ids
+        lt_data["BlockDeviceMappings"] = [
+                    {
+                        "DeviceName": device_name,
+                        "Ebs": {
+                            "DeleteOnTermination": delete_on_termination,
+                            "VolumeType": ebs_volume_type,
+                            "VolumeSize": ebs_volume_size,
+                            }
+                    },
+                ]
+        for i in range(len(devices)):
+            lt_data["BlockDeviceMappings"].append({"DeviceName": devices[i],
+                                                   "VirtualName": virtual_names[i]})
         properties["LaunchTemplateData"] = lt_data
         json_data["Properties"] = properties
         return json_data

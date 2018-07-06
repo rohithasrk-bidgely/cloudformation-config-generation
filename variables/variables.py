@@ -36,7 +36,7 @@ target_capacity = 0
 spot_price = 0.333
 iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
 security_group_ids = ["sg-b3c2b8cc", "sg-f0ccb68f"]
-subnet_ids = ["subnet-63443d05"]
+subnet_ids = ["subnet-48844c31"]
 instance_types = ["m3.xlarge", "r3.xlarge", "m5d.xlarge", "c3.2xlarge",
                   "m3.2xlarge", "c5d.2xlarge", "m5d.2xlarge", "r3.2xlarge",
                   "g2.2xlarge", "c3.4xlarge", "c5d.4xlarge", "m5d.4xlarge",
@@ -46,6 +46,8 @@ device_name = "/dev/sda1"
 delete_on_termination = "true"
 ebs_volume_size = 8
 ebs_volume_type = "gp2"
+devices = ["/dev/xvdca", "/dev/xvdcb"]
+virtual_names = ["ephemeral0", "ephemeral1"]
 ami_id = "ami-aa6c15d2"
 aws_template_format_version = "2010-09-09"
 daemon_type = "AWS::EC2::SpotFleet"
