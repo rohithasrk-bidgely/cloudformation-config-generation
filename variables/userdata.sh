@@ -6,23 +6,23 @@ ln -s /mnt/opt/bidgely/ /opt/
 
 
 # TAG's Instance and Its Volumes
-REGION=\$(curl -s 169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//');
+REGION=$(curl -s 169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//');
 
 echo "=======USER SCRIPT STARTING========"
 echo
 echo "Tagging the instance and its volumes"
 
-INSTANCEID=\$(curl -s http://169.254.169.254/latest/meta-data/instance-id );
-aws ec2 create-tags --resources \$INSTANCEID --tags Key=Name,Value=$TAGNAME Key=Environment,Value=$TAGENV Key=Component,Value=$TAGCOMPONENT Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY --region \$REGION
-INSTANC_VOLUMES=\$(aws ec2 describe-volumes --filter Name=attachment.instance-id,Values=\$INSTANCEID --query Volumes[].VolumeId --out text --region \$REGION);
-for i in \`echo \$INSTANC_VOLUMES\`; do echo \$i ; aws ec2 create-tags --resources \$i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region \$REGION; done
+INSTANCEID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id );
+aws ec2 create-tags --resources $INSTANCEID --tags Key=Name,Value=$TAGNAME Key=Environment,Value=$TAGENV Key=Component,Value=$TAGCOMPONENT Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY --region $REGION
+INSTANC_VOLUMES=$(aws ec2 describe-volumes --filter Name=attachment.instance-id,Values=$INSTANCEID --query Volumes[].VolumeId --out text --region $REGION);
+for i in `echo $INSTANC_VOLUMES`; do echo $i ; aws ec2 create-tags --resources $i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region $REGION; done
 
 
 
-NETWORKINTERFACEID=\`aws ec2 describe-instances --instance-ids \$INSTANCEID  --region \$REGION --output text  | grep NETWORKINTERFACES | awk -F" " '{print \$3}'\`
+NETWORKINTERFACEID=`aws ec2 describe-instances --instance-ids $INSTANCEID  --region $REGION --output text  | grep NETWORKINTERFACES | awk -F" " '{print $3}'`
 
 
-for i in \`echo \$NETWORKINTERFACEID\`; do echo \$i ; aws ec2 create-tags --resources \$i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region \$REGION; done
+for i in `echo $NETWORKINTERFACEID`; do echo $i ; aws ec2 create-tags --resources $i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region $REGION; done
 
 
 
@@ -50,8 +50,8 @@ sed -i 's/BIDGELY_ENV=.*//g' /etc/environment;
 sed -i 's/JAVA_HOME=.*//g' /etc/environment;
 echo BIDGELY_ENV=${BIDGELY_ENV} >> /etc/environment;
 echo JAVA_HOME=${JAVA_HOME} >> /etc/environment;
-if [ ! -z "\$QUEUE_SUFFIX" ]; then
-echo QUEUE_SUFFIX=\${QUEUE_SUFFIX} >> /etc/environment;
+if [ ! -z "$QUEUE_SUFFIX" ]; then
+echo QUEUE_SUFFIX=${QUEUE_SUFFIX} >> /etc/environment;
 fi
 
 echo "Setting up public pem keys"
@@ -65,18 +65,18 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCSPAMBR9eSqVwsKR//PLm0h48Eco1Rn26OSHy9F2py
 echo "Configuring package installation setup"
 # Package Installation
 S3ARTIFACTSBUCKET=bidgely-artifacts/spot-packagelist
-aws s3 ls s3://\$S3ARTIFACTSBUCKET/
-aws s3 cp s3://\$S3ARTIFACTSBUCKET/$TAGENV-rpmlist .
-PACKAGELIST=\`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F \| '{print \$2}' |tr "," " "\`
+aws s3 ls s3://$S3ARTIFACTSBUCKET/
+aws s3 cp s3://$S3ARTIFACTSBUCKET/$TAGENV-rpmlist .
+PACKAGELIST=`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F | '{print $2}' |tr "," " "`
 
 export DEBIAN_FRONTEND=noninteractive
 echo "Unstalling the following packages $PACKAGELIST"
-sudo dpkg -P \$PACKAGELIST ; sudo dpkg -P \$PACKAGELIST 
+sudo dpkg -P $PACKAGELIST ; sudo dpkg -P $PACKAGELIST
 echo "================================================="
 echo "Installing the following packages $PACKAGELIST"
-for PACKAGE in \`echo \$PACKAGELIST\`; do
+for PACKAGE in `echo $PACKAGELIST`; do
 
-apt-get install \$PACKAGE -y --force-yes
+apt-get install $PACKAGE -y --force-yes
 done
 #
 # Cloudwatch Setup
@@ -90,9 +90,9 @@ fi
 
 
 # ALARM Setup
-aws cloudwatch put-metric-alarm --alarm-name "\$TAGENV-alarm-high-cpu-for-\$INSTANCEID" --alarm-description "Alarm For CPU exceeds 80 percent on \$TAGNAME" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 80 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=\$INSTANCEID" --evaluation-periods 3 --alarm-actions "arn:aws:sns:\${REGION}:\${AWSACCOUNTID}:qa-warning" --ok-actions "arn:aws:sns:\${REGION}:\${AWSACCOUNTID}:qa-warning" --unit Percent --region \$REGION
+aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-high-cpu-for-$INSTANCEID" --alarm-description "Alarm For CPU exceeds 80 percent on $TAGNAME" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 80 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=$INSTANCEID" --evaluation-periods 3 --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning" --ok-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning" --unit Percent --region $REGION
 
-aws cloudwatch put-metric-alarm --alarm-name "\$TAGENV-alarm-statuscheckfailed-for-\$INSTANCEID" --alarm-description "Alarm For Instance Status Check Failed on \$TAGNAME" --metric-name StatusCheckFailed --namespace AWS/EC2 --statistic Maximum --dimensions Name=InstanceId,Value=\$INSTANCEID --period 300 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --alarm-actions "arn:aws:sns:\${REGION}:\${AWSACCOUNTID}:qa-warning"  "arn:aws:swf:\${REGION}:\${AWSACCOUNTID}:action/actions/AWS_EC2.InstanceId.Reboot/1.0" --ok-actions arn:aws:sns:\${REGION}:\${AWSACCOUNTID}:qa-warning --unit Count --region \$REGION
+aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-statuscheckfailed-for-$INSTANCEID" --alarm-description "Alarm For Instance Status Check Failed on $TAGNAME" --metric-name StatusCheckFailed --namespace AWS/EC2 --statistic Maximum --dimensions Name=InstanceId,Value=$INSTANCEID --period 300 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning"  "arn:aws:swf:${REGION}:${AWSACCOUNTID}:action/actions/AWS_EC2.InstanceId.Reboot/1.0" --ok-actions arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning --unit Count --region $REGION
 echo 
 echo "Alarm creation done"
 
