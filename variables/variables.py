@@ -8,7 +8,7 @@ keypair = "nonprodqa"
 instance_profile = ""
 queue_suffix = ""
 repo = "repo2.bidgely.com"
-repo_dir = "nonprodqa"
+repo_dir = "debs/nonprodqa"
 s3_artifact_bucket = "bidgely-artifacts/operations"
 cloud_watch = "NO"
 
