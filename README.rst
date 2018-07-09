@@ -1,4 +1,4 @@
-Spot Fleet Configuration Generator
-----------------------------------
+AWS CloudFormation Template Conifg Generator
+--------------------------------------------
 
-A python module to generate spot fleet configurations dynamically.
+A python module to generate the AWS CloudFormation configurations dynamically.
