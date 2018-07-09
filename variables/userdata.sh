@@ -64,7 +64,6 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCSPAMBR9eSqVwsKR//PLm0h48Eco1Rn26OSHy9F2py
 
 echo "Configuring package installation setup"
 # Package Installation
-S3ARTIFACTSBUCKET=bidgely-artifacts/spot-packagelist
 aws s3 ls s3://$S3ARTIFACTSBUCKET/
 aws s3 cp s3://$S3ARTIFACTSBUCKET/$TAGENV-rpmlist .
 PACKAGELIST=`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F | '{print $2}' |tr "," " "`
