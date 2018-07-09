@@ -66,7 +66,7 @@ echo "Configuring package installation setup"
 # Package Installation
 aws s3 ls s3://$S3ARTIFACTSBUCKET/
 aws s3 cp s3://$S3ARTIFACTSBUCKET/$TAGENV-rpmlist .
-PACKAGELIST=`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F | '{print $2}' |tr "," " "`
+PACKAGELIST=`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F \| '{print $2}' | tr "," " "`
 
 export DEBIAN_FRONTEND=noninteractive
 echo "Unstalling the following packages $PACKAGELIST"
