@@ -10,10 +10,7 @@ def generate_user_data(name):
             "Fn::Join": [
                 "",
                 [
-                    "",
-                    {
-                        "Ref": "AWS::Region"
-                    },
+                    "#!/bin/bash -xe\n",
                     "echo \"=================USER SCRIPT START====================\"",
                     "echo\n",
                     "TAGNAME={}\n".format(name),
