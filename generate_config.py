@@ -15,7 +15,7 @@ class GenerateConfig(object):
 
     @staticmethod
     def get_launch_template_version_number(name):
-        resource_name = name.split('-')[0]
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
         client = boto3.client('ec2')
         version_number = 1
         try:
@@ -41,7 +41,7 @@ class GenerateConfig(object):
     def generate_component(resources, name):
         exec("from variables import *", globals())
         exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
-        resource_name = name.split('-')[0]
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
         resources["{}LaunchTemplate".format(resource_name)] = generate_launch_template(name)
         resources["{}Daemon".format(resource_name)] = generate_daemons(name)
         if not only_spot_resources:
@@ -63,8 +63,8 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = launch_template_type
         properties = OrderedDict()
-        comp_name = name.split('-')[0]
-        properties["LaunchTemplateName"] = "{}LaunchTemplate".format(comp_name)
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
+        properties["LaunchTemplateName"] = "{}LaunchTemplate".format(resource_name)
         lt_data = OrderedDict()
         lt_data["KeyName"] = key_name
         lt_data["Placement"] = {"Tenancy": lc_placement_tenancy}
@@ -118,7 +118,7 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_daemons(name):
-        resource_name = name.split('-')[0]
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
         json_data = OrderedDict()
         json_data["Type"] = "AWS::EC2::SpotFleet"
         properties = OrderedDict()
@@ -186,9 +186,8 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_target_capacity_alarm(name, low=True):
-        comp_name = name.split('-')[0]
-        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(comp_name, "{}", tagenv).format("low" if low else "high")
-        resource_name = name.replace('-','').replace('_','')
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
+        alarm_name = "{}-targetcapacity-alarm-{}-{}".format(resource_name, "{}", tagenv).format("low" if low else "high")
         dimensions = [
             {
                 "Name": "FleetRequestId",
@@ -228,8 +227,8 @@ class GenerateConfig(object):
 
     @staticmethod
     def generate_scale_alarm(name, down=True):
-        comp_name = name.split('-')[0]
-        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(comp_name, "{}", tagenv).format("down" if down else "up")
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
+        alarm_name = "{}-spotfleet-alarm-scale{}-{}".format(resource_name, "{}", tagenv).format("down" if down else "up")
         dimensions = [
             {
                 "Name": "QueueName",
@@ -237,7 +236,6 @@ class GenerateConfig(object):
             }
         ]
         comparision_operator = "LessThanThreshold" if down else "GreaterThanThreshold"
-        resource_name = name.replace('-','')
         alarm_actions = [
             {
                 "Ref": "{}Scaling{}Policy".format(resource_name, "Down" if down else "Up")
@@ -274,10 +272,9 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = scaling_policy_type
         properties = OrderedDict()
-        resource_name = name.replace('-','').replace('_','')
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
         properties["PolicyName"] = "stepdownpolicy" if down else "stepuppolicy"
         properties["PolicyType"] = "StepScaling"
-        resource_name = name.replace('-','')
         properties["ScalingTargetId"] = {"Ref": "{}ScalingTarget".format(resource_name)}
         step_scaling = OrderedDict()
         step_scaling["AdjustmentType"] = scaling_adjustment_type
@@ -300,7 +297,7 @@ class GenerateConfig(object):
         properties = OrderedDict()
         properties["MaxCapacity"] = scaling_max_cap
         properties["MinCapacity"] = scaling_min_cap
-        resource_name = name.replace('-','')
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
         properties["ResourceId"] = {
             "Fn::Join": [
                 "/",
@@ -339,8 +336,8 @@ class GenerateConfig(object):
         properties["ImageId"] = ami_id
         properties["InstanceMonitoring"] = ondemand_instance_monitoring
         properties["InstanceType"] = ondemand_instance_type
-        comp_name = name.split('-')[0]
-        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(comp_name, tagenv)
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
+        properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(resource_name, tagenv)
         properties["SecurityGroups"] = security_group_ids
         properties["UserData"] = generate_user_data(name)
         json_data["Properties"] = properties
@@ -351,9 +348,8 @@ class GenerateConfig(object):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_asg_type
         properties = OrderedDict()
-        resource_name = name.replace('-','').replace('_','')
-        comp_name = name.split('-')[0]
-        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
+        resource_name = "{}{}".format(name.split('-')[0], tagenv)
+        properties["AutoScalingGroupName"] = "{}-ondemand-asg-{}".format(resource_name, tagenv)
         properties["AvailabilityZones"] = [availability_zone]
         properties["LaunchConfigurationName"] = {"Ref": "{}OnDemandLaunchConfiguration".format(resource_name)}
         properties["DesiredCapacity"] = ondemand_asg_desiredcap
@@ -362,7 +358,7 @@ class GenerateConfig(object):
         tags = []
         tag_dict = OrderedDict()
         tag_dict["ResourceType"] = "auto-scaling-group"
-        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
+        tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(resource_name, tagenv)
         tag_dict["PropagateAtLaunch"] = 'true'
         tag_dict["Value"] = ''
         tag_dict["Key"] = ''
@@ -370,7 +366,7 @@ class GenerateConfig(object):
         for i, j in iter(ondemand_asg_tags):
             tag_dict = OrderedDict()
             tag_dict["ResourceType"] = "auto-scaling-group"
-            tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(comp_name, tagenv)
+            tag_dict["ResourceId"] = "{}-ondemand-asg-{}".format(resource_name, tagenv)
             tag_dict["PropagateAtLaunch"] = 'true'
             tag_dict["Value"] = i
             tag_dict["Key"] = j
