@@ -33,6 +33,7 @@ def generate_user_data(name):
                     "REPODIR={}\n".format(repo_dir),
                     "S3ARTIFACTSBUCKET={}\n".format(s3_artifact_bucket),
                     "CLOUDWATCH={}\n".format(cloud_watch),
+                    "SNSTOPIC={}\n".format(sns_topic),
                 ]
             ]
         }

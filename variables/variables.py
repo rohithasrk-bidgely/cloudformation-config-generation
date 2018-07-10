@@ -35,8 +35,8 @@ allocation_strategy = "lowestPrice"
 target_capacity = 0
 spot_price = 0.333
 iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/dev-iam-instance-profile"
-security_group_ids = ["sg-b3c2b8cc", "sg-f0ccb68f"]
-subnet_ids = ["subnet-48844c31"]
+security_group_ids = ["sg-7cefc601"]
+subnet_ids = ["subnet-63443d05"]
 instance_types = ["m3.xlarge", "r3.xlarge", "m5d.xlarge", "c3.2xlarge",
                   "m3.2xlarge", "c5d.2xlarge", "m5d.2xlarge", "r3.2xlarge",
                   "g2.2xlarge", "c3.4xlarge", "c5d.4xlarge", "m5d.4xlarge",

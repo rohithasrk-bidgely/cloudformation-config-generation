@@ -4,7 +4,6 @@ mkdir -p /mnt/var/log/bidgely
 ln -s /mnt/var/log/bidgely /var/log/
 ln -s /mnt/opt/bidgely/ /opt/
 
-
 # TAG's Instance and Its Volumes
 REGION=$(curl -s 169.254.169.254/latest/meta-data/placement/availability-zone | sed 's/.$//');
 
@@ -17,14 +16,9 @@ aws ec2 create-tags --resources $INSTANCEID --tags Key=Name,Value=$TAGNAME Key=E
 INSTANC_VOLUMES=$(aws ec2 describe-volumes --filter Name=attachment.instance-id,Values=$INSTANCEID --query Volumes[].VolumeId --out text --region $REGION);
 for i in `echo $INSTANC_VOLUMES`; do echo $i ; aws ec2 create-tags --resources $i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region $REGION; done
 
-
-
 NETWORKINTERFACEID=`aws ec2 describe-instances --instance-ids $INSTANCEID  --region $REGION --output text  | grep NETWORKINTERFACES | awk -F" " '{print $3}'`
 
-
 for i in `echo $NETWORKINTERFACEID`; do echo $i ; aws ec2 create-tags --resources $i --tags Key=Name,Value=$TAGNAME Key=Component,Value=$TAGCOMPONENT Key=Environment,Value=$TAGENV Key=Owner,Value=$OWNER Key=Utility,Value=$UTILITY  --region $REGION; done
-
-
 
 echo
 echo "Configuring $REPO/$REPODIR"
@@ -69,13 +63,12 @@ aws s3 cp s3://$S3ARTIFACTSBUCKET/$TAGENV-rpmlist .
 PACKAGELIST=`cat $TAGENV-rpmlist | grep -w $TAGNAME | awk -F \| '{print $2}' | tr "," " "`
 
 export DEBIAN_FRONTEND=noninteractive
-echo "Unstalling the following packages $PACKAGELIST"
-sudo dpkg -P $PACKAGELIST ; sudo dpkg -P $PACKAGELIST
+echo "Unstalling the following packages \"$PACKAGELIST\""
+sudo dpkg -P "$PACKAGELIST" ; sudo dpkg -P "$PACKAGELIST"
 echo "================================================="
-echo "Installing the following packages $PACKAGELIST"
-for PACKAGE in `echo $PACKAGELIST`; do
-
-apt-get install $PACKAGE -y --force-yes
+echo "Installing the following packages \"$PACKAGELIST\""
+for PACKAGE in `echo "$PACKAGELIST"`; do
+    apt-get install $PACKAGE -y --force-yes
 done
 #
 # Cloudwatch Setup
@@ -87,13 +80,17 @@ sh /opt/bidgely/cloudwatch-logpush.sh
 fi
 #
 
+echo "Stopping the awslogs..."
+sudo service awslogs stop
 
 # ALARM Setup
-aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-high-cpu-for-$INSTANCEID" --alarm-description "Alarm For CPU exceeds 80 percent on $TAGNAME" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 80 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=$INSTANCEID" --evaluation-periods 3 --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning" --ok-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning" --unit Percent --region $REGION
+aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-high-cpu-for-$INSTANCEID" --alarm-description "Alarm For CPU exceeds 80 percent on $TAGNAME" --metric-name CPUUtilization --namespace AWS/EC2 --statistic Average --period 300 --threshold 80 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=$INSTANCEID" --evaluation-periods 3 --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC}" --ok-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC}" --unit Percent --region $REGION
 
-aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-statuscheckfailed-for-$INSTANCEID" --alarm-description "Alarm For Instance Status Check Failed on $TAGNAME" --metric-name StatusCheckFailed --namespace AWS/EC2 --statistic Maximum --dimensions Name=InstanceId,Value=$INSTANCEID --period 300 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning"  "arn:aws:swf:${REGION}:${AWSACCOUNTID}:action/actions/AWS_EC2.InstanceId.Reboot/1.0" --ok-actions arn:aws:sns:${REGION}:${AWSACCOUNTID}:qa-warning --unit Count --region $REGION
+aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-statuscheckfailed-for-$INSTANCEID" --alarm-description "Alarm For Instance Status Check Failed on $TAGNAME" --metric-name StatusCheckFailed --namespace AWS/EC2 --statistic Maximum --dimensions Name=InstanceId,Value=$INSTANCEID --period 300 --evaluation-periods 3 --threshold 1 --comparison-operator GreaterThanOrEqualToThreshold --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC}"  "arn:aws:swf:${REGION}:${AWSACCOUNTID}:action/actions/AWS_EC2.InstanceId.Reboot/1.0" --ok-actions arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC} --unit Count --region $REGION
+
+aws cloudwatch put-metric-alarm --alarm-name "$TAGENV-alarm-high-nw-out-for-$INSTANCEID" --alarm-description "Alarm For NW out exceeds 20000000 Bytes on $TAGNAME" --metric-name NetworkOut --namespace AWS/EC2 --statistic Average --period 3600 --threshold 20000000 --comparison-operator GreaterThanThreshold  --dimensions "Name=InstanceId,Value=$INSTANCEID" --evaluation-periods 1 --alarm-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC}" --ok-actions "arn:aws:sns:${REGION}:${AWSACCOUNTID}:${SNSTOPIC}" --unit Percent --region $REGION
+
 echo 
 echo "Alarm creation done"
-
 echo
 echo "=================USER SCRIPT END===================="

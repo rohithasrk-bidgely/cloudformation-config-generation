@@ -254,7 +254,7 @@ class GenerateConfig(object):
                         {
                             "Ref": "AWS::AccountId"
                         },
-                        scale_alarm_okactions
+                        ":{}".format(sns_topic)
                     ]
                 ]
             }
