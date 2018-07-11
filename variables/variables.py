@@ -10,7 +10,7 @@ queue_suffix = ""
 repo = "repo2.bidgely.com"
 repo_dir = "debs/nonprodqa"
 s3_artifact_bucket = "bidgely-artifacts/operations"
-cloud_watch = "NO"
+cloud_watch = "YES"
 
 
 # Putting scaling_policy = True generates scale alarms and other relevant resources.

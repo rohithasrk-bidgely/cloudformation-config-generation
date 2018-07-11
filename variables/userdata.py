@@ -10,7 +10,7 @@ def generate_user_data(name):
             "Fn::Join": [
                 "",
                 [
-                    "#!/bin/bash -xe\n",
+                    "#!/bin/bash -x\n",
                     "echo \"=================USER SCRIPT START====================\"",
                     "echo\n",
                     "TAGNAME={}\n".format(name),
