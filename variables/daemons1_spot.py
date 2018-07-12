@@ -1,1 +1,1 @@
-target_capacity = 1
+target_capacity = 2
