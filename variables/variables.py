@@ -1,16 +1,16 @@
-tagenv = "nonprodqa"
+tagenv = "preprod"
 tagcomponent = "daemons"
-owner = "vasu"
+owner = "ops"
 utility = "all"
 snapshot_id = ""
-bidgely_env = "nonprodqa"
-keypair = "nonprodqa"
-instance_profile = ""
+bidgely_env = "preprod"
+keypair = "napreprod-prod"
+instance_profile = "default-instance-role-preprod"
 queue_suffix = ""
 repo = "repo2.bidgely.com"
-repo_dir = "debs/nonprodqa"
+repo_dir = "preprod"
 s3_artifact_bucket = "bidgely-artifacts/operations"
-cloud_watch = "YES"
+cloud_watch = "NO"
 
 
 # Putting scaling_policy = True generates scale alarms and other relevant resources.
@@ -20,7 +20,7 @@ scaling_policy = True
 only_spot_resources = True
 
 launch_template_type = "AWS::EC2::LaunchTemplate"
-key_name = "nonprodqa"
+key_name = "napreprod-prod"
 lc_placement_tenancy = "default"
 monitoring_enabled = "false"
 launch_template_resource_type = "instance"
@@ -34,9 +34,9 @@ valid_until = "2027-07-02T00:00:00Z"
 allocation_strategy = "lowestPrice"
 target_capacity = 1
 spot_price = 0.333
-iam_instance_profile = "arn:aws:iam::189675173661:instance-profile/default-instance-role"
-security_group_ids = ["sg-7cefc601"]
-subnet_ids = ["subnet-63443d05"]
+iam_instance_profile = "arn:aws:iam::857283459404:instance-profile/default-instance-role-preprod"
+security_group_ids = ["sg-c16376ba", "sg-c76376bc"]
+subnet_ids = ["subnet-b923c0f0"]
 instance_types = ["m3.xlarge", "r3.xlarge", "m5d.xlarge", "c3.2xlarge",
                   "m3.2xlarge", "c5d.2xlarge", "m5d.2xlarge", "r3.2xlarge",
                   "g2.2xlarge", "c3.4xlarge", "c5d.4xlarge", "m5d.4xlarge",
@@ -54,7 +54,7 @@ daemon_type = "AWS::EC2::SpotFleet"
 
 ondemand_lc_type = "AWS::AutoScaling::LaunchConfiguration"
 ondemand_ebsoptimised = 'true'
-ondemand_iam_profile = 'dev-iam-instance-profile'
+ondemand_iam_profile = 'default-instance-role-preprod'
 ondemand_instance_monitoring = 'false'
 ondemand_instance_type = 'm4.large'
 ondemand_lc_device_name = '/dev/sda1'

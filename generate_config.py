@@ -40,7 +40,10 @@ class GenerateConfig(object):
     @staticmethod
     def generate_component(resources, name):
         exec("from variables import *", globals())
-        exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+        try:
+            exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+        except ImportError:
+            pass
         resource_name = "{}{}".format(name.split('-')[0], tagenv)
         resources["{}LaunchTemplate".format(resource_name)] = generate_launch_template(name)
         resources["{}Daemon".format(resource_name)] = generate_daemons(name)

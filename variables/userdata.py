@@ -2,7 +2,10 @@ from . import *
 
 
 def generate_user_data(name):
-    exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+    try:
+        exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+    except ImportError:
+        pass
     security_groups = ",".join(security_group_ids)
     if len(subnet_ids)==1: subnet_id = subnet_ids[0]
     user_data = {
