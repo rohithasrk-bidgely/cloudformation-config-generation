@@ -1,9 +1,9 @@
 import json
+import sys
 from collections import OrderedDict
 
 import boto3
 
-from variables import *
 from variables.asg_tags import generate_asg_tags
 from variables.userdata import generate_user_data
 
@@ -28,30 +28,31 @@ class GenerateConfig(object):
         return version_number
 
     @staticmethod
-    def generate_config():
+    def generate_config(env_name):
+        exec("from variables.{} import *".format(env_name), globals())
         aws_config = OrderedDict()
         aws_config["AWSTemplateFormatVersion"] = aws_template_format_version
         resources = OrderedDict()
         for name in COMPONENTS:
-            generate_component(resources, name)
+            generate_component(resources, name, env_name)
         aws_config["Resources"] = resources
         return aws_config
 
     @staticmethod
-    def generate_component(resources, name):
-        exec("from variables import *", globals())
+    def generate_component(resources, name, env_name):
+        exec("from variables.{} import *".format(env_name), globals())
         try:
-            exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
+            exec("from variables.{}.{} import *".format(env_name, name.lower().replace('-','_')), globals())
         except ImportError:
             pass
         resource_name = "{}{}".format(name.split('-')[0], tagenv)
-        resources["{}LaunchTemplate".format(resource_name)] = generate_launch_template(name)
+        resources["{}LaunchTemplate".format(resource_name)] = generate_launch_template(name, env_name)
         resources["{}Daemon".format(resource_name)] = generate_daemons(name)
         if not only_spot_resources:
             resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
             resources["{}TargetCapacityLowAlarm".format(resource_name)] = generate_target_capacity_alarm(name, True)
             resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name)
-            resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name)
+            resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name, env_name)
             if scaling_policy:
                 resources["{}ScalingTarget".format(resource_name)] = generate_scaling_target(name)
                 resources["{}ScalingUpPolicy".format(resource_name)] = generate_scaling_policy(name, False)
@@ -62,7 +63,7 @@ class GenerateConfig(object):
 
 
     @staticmethod
-    def generate_launch_template(name):
+    def generate_launch_template(name, env_name):
         json_data = OrderedDict()
         json_data["Type"] = launch_template_type
         properties = OrderedDict()
@@ -100,7 +101,7 @@ class GenerateConfig(object):
         tag_specs["ResourceType"] = launch_template_resource_type
         lt_data["TagSpecifications"] = [tag_specs]
         lt_data["IamInstanceProfile"] = {"Arn": iam_instance_profile}
-        lt_data["UserData"] = generate_user_data(name)
+        lt_data["UserData"] = generate_user_data(name, env_name)
         lt_data["SecurityGroupIds"] = security_group_ids
         lt_data["BlockDeviceMappings"] = [
                     {
@@ -347,7 +348,7 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_ondemand_asg(name):
+    def generate_ondemand_asg(name, env_name):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_asg_type
         properties = OrderedDict()
@@ -365,7 +366,7 @@ class GenerateConfig(object):
         tag_dict["PropagateAtLaunch"] = 'true'
         tag_dict["Value"] = ''
         tag_dict["Key"] = ''
-        ondemand_asg_tags = generate_asg_tags(name)
+        ondemand_asg_tags = generate_asg_tags(name, env_name)
         for i, j in iter(ondemand_asg_tags):
             tag_dict = OrderedDict()
             tag_dict["ResourceType"] = "auto-scaling-group"
@@ -377,6 +378,20 @@ class GenerateConfig(object):
         properties["Tags"] = tags
         json_data["Properties"] = properties
         return json_data
+
+    @staticmethod
+    def validate_env_name(env_name):
+        env_names = ['preprod',
+                     'prodna',
+                     'prodeu',
+                     'dev',
+                     'nonprodqa',
+                     'uat',
+                     'ds',
+                     ]
+        if env_name not in env_names:
+            sys.stdout.write("Please enter a valid env name\n")
+            sys.exit(1)
 
 generate_config = GenerateConfig.generate_config
 get_launch_template_version_number = GenerateConfig.get_launch_template_version_number
@@ -390,10 +405,15 @@ generate_scaling_policy = GenerateConfig.generate_scaling_policy
 generate_scaling_target = GenerateConfig.generate_scaling_target
 generate_ondemand_lc = GenerateConfig.generate_ondemand_lc
 generate_ondemand_asg = GenerateConfig.generate_ondemand_asg
-
+validate_env_name = GenerateConfig.validate_env_name
 
 if __name__ == "__main__":
-    json_data = generate_config()
+    if len(sys.argv) < 2:
+        sys.stdout.write("Usage: python generate_config.py <env_name>\n")
+        sys.exit(1)
+    env_name = sys.argv[1].lower()
+    validate_env_name(env_name)
+    json_data = generate_config(env_name)
     with  open ("config.json", "w") as config_json:
         config_json.write(json.dumps(json_data, indent=2))
         config_json.close()

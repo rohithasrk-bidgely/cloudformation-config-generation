@@ -1,7 +1,9 @@
-def generate_user_data(name, env_name):
-    exec("from variables.{} import *".format(env_name), globals())
+from . import *
+
+
+def generate_user_data(name):
     try:
-        exec("from variables.{}.{} import *".format(env_name, name.lower().replace('-','_')), globals())
+        exec("from variables.{} import *".format(name.lower().replace('-','_')), globals())
     except ImportError:
         pass
     security_groups = ",".join(security_group_ids)
