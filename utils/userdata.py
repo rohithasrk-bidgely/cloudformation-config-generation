@@ -39,7 +39,7 @@ def generate_user_data(name, env_name):
             ]
         }
     }
-    f = open('variables/userdata.sh').read()
+    f = open('variables/{}/userdata.sh'.format(env_name)).read()
     f = f.split('\n')
     for i in f:
         if i!='' and not i.startswith('#'):

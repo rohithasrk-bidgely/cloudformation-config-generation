@@ -4,8 +4,7 @@ from collections import OrderedDict
 
 import boto3
 
-from variables.asg_tags import generate_asg_tags
-from variables.userdata import generate_user_data
+from utils import generate_asg_tags, generate_user_data
 
 
 class GenerateConfig(object):

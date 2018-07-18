@@ -24,7 +24,7 @@ echo
 echo "Configuring $REPO/$REPODIR"
 #deb http://repo.bidgely.com prodna/
 # Create Source list for packages to install from our local repo
-echo "deb http://${REPO}/ $REPODIR/" >> /etc/apt/sources.list
+echo "deb http://${REPO}/$REPODIR /" >> /etc/apt/sources.list
 echo "Package: *" >> /etc/apt/preferences
 echo 'Pin: origin "${REPO}"' >> /etc/apt/preferences
 echo "Pin-Priority: 1001" >> /etc/apt/preferences
