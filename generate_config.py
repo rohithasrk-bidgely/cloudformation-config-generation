@@ -413,7 +413,7 @@ if __name__ == "__main__":
     env_name = sys.argv[1].lower()
     validate_env_name(env_name)
     json_data = generate_config(env_name)
-    with  open ("config.json", "w") as config_json:
+    with  open ("templates/{}.json".format(env_name), "w") as config_json:
         config_json.write(json.dumps(json_data, indent=2))
         config_json.close()
         resources = OrderedDict()
