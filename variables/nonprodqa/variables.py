@@ -17,7 +17,7 @@ cloud_watch = "NO"
 scaling_policy = True
 
 # Generates only_spot_resources for a particular component. If set here, it generates only_spot_resources for all components.
-only_spot_resources = True
+only_spot_resources = False
 
 launch_template_type = "AWS::EC2::LaunchTemplate"
 key_name = "nanonprodqa-prod"

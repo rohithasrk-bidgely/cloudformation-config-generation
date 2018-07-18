@@ -1,5 +1,5 @@
 def generate_asg_tags(name, env_name):
-    exec("from variables.{} import *".format(env_name))
+    exec("from variables.{} import *".format(env_name), globals())
     try:
         exec("from variables.{}.{} import *".format(env_name, name.lower().replace('-','_')), globals())
     except ImportError:

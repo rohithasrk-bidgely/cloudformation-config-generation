@@ -51,7 +51,7 @@ class GenerateConfig(object):
         if not only_spot_resources:
             resources["{}TargetCapacityHighAlarm".format(resource_name)] = generate_target_capacity_alarm(name, False)
             resources["{}TargetCapacityLowAlarm".format(resource_name)] = generate_target_capacity_alarm(name, True)
-            resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name)
+            resources["{}OnDemandLaunchConfiguration".format(resource_name)] = generate_ondemand_lc(name, env_name)
             resources["{}OnDemandAutoScalingGroup".format(resource_name)] = generate_ondemand_asg(name, env_name)
             if scaling_policy:
                 resources["{}ScalingTarget".format(resource_name)] = generate_scaling_target(name)
@@ -320,7 +320,7 @@ class GenerateConfig(object):
         return json_data
 
     @staticmethod
-    def generate_ondemand_lc(name):
+    def generate_ondemand_lc(name, env_name):
         json_data = OrderedDict()
         json_data["Type"] = ondemand_lc_type
         properties = OrderedDict()
@@ -343,7 +343,7 @@ class GenerateConfig(object):
         resource_name = "{}{}".format(name.split('-')[0], tagenv)
         properties["LaunchConfigurationName"] = "{}-ondemand-lc-{}".format(resource_name, tagenv)
         properties["SecurityGroups"] = security_group_ids
-        properties["UserData"] = generate_user_data(name)
+        properties["UserData"] = generate_user_data(name, env_name)
         json_data["Properties"] = properties
         return json_data
 
